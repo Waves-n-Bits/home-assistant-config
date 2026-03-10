@@ -93,7 +93,7 @@
 
         *:gear: Systems*
         {% set pwr = states('sensor.total_power_alarm_power_failure_alarm') | lower -%}
-        {{ ':green_circle:' if pwr == 'ok' else ':red_circle:' }} {{ "%-14s"|format(pwr | capitalize) }}  Power
+        {{ ':green_circle:' if pwr == 'normal' else ':red_circle:' }} {{ "%-14s"|format(pwr | capitalize) }}  Power
         {% set leak = states('binary_sensor.water_leak_sensor') -%}
         {{ ':green_circle:' if leak == 'off' else ':red_circle:' }} {{ "%-14s"|format(state_translated('binary_sensor.water_leak_sensor')) }}  Exec Bathroom
         {% set kpsi = states('sensor.kaeser_monitor_system_pressure') | float(0) -%}
@@ -142,7 +142,7 @@
 
         *:gear: Systems*
         {% set pwr = states('sensor.total_power_alarm_power_failure_alarm') | lower -%}
-        {{ ':green_circle:' if pwr == 'ok' else ':red_circle:' }} {{ "%-14s"|format(pwr | capitalize) }}  Power
+        {{ ':green_circle:' if pwr == 'normal' else ':red_circle:' }} {{ "%-14s"|format(pwr | capitalize) }}  Power
         {% set leak = states('binary_sensor.water_leak_sensor') -%}
         {{ ':green_circle:' if leak == 'off' else ':red_circle:' }} {{ "%-14s"|format(state_translated('binary_sensor.water_leak_sensor')) }}  Exec Bathroom
         {% set kpsi = states('sensor.kaeser_monitor_system_pressure') | float(0) -%}

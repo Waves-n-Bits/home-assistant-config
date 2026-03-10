@@ -23,7 +23,7 @@ views:
           ## 🏢 Facilities — **{{ now().strftime('%-I:%M %p') }}**
 
           Temp range: **{{ t_min | round(1) if t_min is not none else 'N/A' }}–{{ t_max | round(1) if t_max is not none else 'N/A' }}°F** |
-          Power: **{{ 'OK' if pwr == 'ok' else '⚠️ ALARM' }}** |
+          Power: **{{ 'OK' if pwr == 'normal' else '⚠️ ALARM' }}** |
           Water: **{{ 'OK' if leak == 'off' else '⚠️ LEAK' }}** |
           Air Quality: **{{ aq }}**
 
