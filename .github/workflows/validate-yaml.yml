@@ -57,7 +57,7 @@ jobs:
 
       - name: Create dummy secrets.yaml
         run: |
-          cat > secrets.yaml <<'EOF'
+          cat > fake_secrets.yaml <<'EOF'
           slack_bot_token_header: "Bearer xoxb-dummy"
           eventbrite_token_header: "Bearer dummy-token"
           eventbrite_webhook_id: "dummy-webhook-id"
@@ -69,5 +69,5 @@ jobs:
         uses: frenck/action-home-assistant@v1
         with:
           path: "."
-          secrets: secrets.yaml
+          secrets: fake_secrets.yaml
           version: stable
