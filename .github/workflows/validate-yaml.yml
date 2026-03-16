@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create dummy secrets.yaml
+      - name: Create CI scaffolding
         run: |
           cat > fake_secrets.yaml <<'EOF'
           slack_bot_token_header: "Bearer xoxb-dummy"
@@ -64,6 +64,7 @@ jobs:
           stripe_webhook_id: "dummy-stripe-webhook"
           octoeverywhere_webhook_id: "dummy-octoeverywhere-webhook"
           EOF
+          mkdir -p www/snapshots
 
       - name: Check HA config
         uses: frenck/action-home-assistant@v1
