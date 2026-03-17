@@ -58,6 +58,15 @@
         %}{% if e %}{{ e }}{% else %}{% set s = states("sensor."+printer+"_print_time_left")|int(0)
         %}{% if s > 0 %}{{ now() + timedelta(seconds=s) }}{% endif %}{% endif %}'
       thread_ts: '{{ states("input_text."+printer+"_slack_thread_ts") }}'
+  - variables:
+      progress_msg: ":speech_balloon: {{ states('sensor.'+printer+'_print_progress',
+        with_unit=True) }}{% if end_dt %} | {% set secs = (as_timestamp(end_dt) - as_timestamp(now()))
+        | int(0) %}{% set h = secs // 3600 %}{% set m = (secs % 3600) // 60 %}{{ h
+        }}h {{ '%02d' | format(m) }}m (ends {{ as_timestamp(end_dt) | timestamp_custom('%I:%M
+        %p') }}){% endif %} — {% if display_name != object_name %}@{{display_name}},
+        {% endif %}{{object_name}} {% set prog = states('sensor.'+printer+'_print_progress')
+        | int(0) %}{% if prog >= 90 %}almost done!{% elif prog >= 50 %}halfway there!{%
+        else %}printing away!{% endif %} {{states('input_text.'+printer+'_stream')}}"
   - choose:
     - conditions:
       - condition: template
@@ -65,33 +74,73 @@
       sequence:
       - data:
           target: "#3dprint-info"
-          message: ":speech_balloon: {{ states('sensor.'+printer+'_print_progress', with_unit=True)
-            }}{% if end_dt %} | {% set secs = (as_timestamp(end_dt) - as_timestamp(now()))
-            | int(0) %}{% set h = secs // 3600 %}{% set m = (secs % 3600) // 60 %}{{ h
-            }}h {{ '%02d' | format(m) }}m (ends {{ as_timestamp(end_dt) | timestamp_custom('%I:%M
-            %p') }}){% endif %} — {% if display_name != object_name %}@{{display_name}},
-            {% endif %}{{object_name}} {% set prog = states('sensor.'+printer+'_print_progress')
-            | int(0) %}{% if prog >= 90 %}almost done!{% elif prog >= 50 %}halfway there!{%
-            else %}printing away!{% endif %} {{states('input_text.'+printer+'_stream')}}"
+          message: "{{ progress_msg }}"
           data:
             username: '{{ printer | capitalize }}'
             icon: '{{ ''kiwifruit'' if printer == ''kiwi'' else printer }}'
             thread_ts: '{{ thread_ts }}'
+            blocks:
+            - type: section
+              text:
+                type: mrkdwn
+                text: "{{ progress_msg }}"
+            - type: actions
+              elements:
+              - type: button
+                text:
+                  type: plain_text
+                  text: "Cancel Print"
+                style: danger
+                action_id: cancel_bambu_print
+                value: "{{ printer }}"
+                confirm:
+                  title:
+                    type: plain_text
+                    text: "Cancel Print?"
+                  text:
+                    type: mrkdwn
+                    text: "This will stop the current print. Are you sure?"
+                  confirm:
+                    type: plain_text
+                    text: "Yes, cancel it"
+                  deny:
+                    type: plain_text
+                    text: "Never mind"
         action: notify.make_nashville
     default:
     - data:
         target: "#3dprint-info"
-        message: ":speech_balloon: {{ states('sensor.'+printer+'_print_progress', with_unit=True)
-          }}{% if end_dt %} | {% set secs = (as_timestamp(end_dt) - as_timestamp(now()))
-          | int(0) %}{% set h = secs // 3600 %}{% set m = (secs % 3600) // 60 %}{{ h
-          }}h {{ '%02d' | format(m) }}m (ends {{ as_timestamp(end_dt) | timestamp_custom('%I:%M
-          %p') }}){% endif %} — {% if display_name != object_name %}@{{display_name}},
-          {% endif %}{{object_name}} {% set prog = states('sensor.'+printer+'_print_progress')
-          | int(0) %}{% if prog >= 90 %}almost done!{% elif prog >= 50 %}halfway there!{%
-          else %}printing away!{% endif %} {{states('input_text.'+printer+'_stream')}}"
+        message: "{{ progress_msg }}"
         data:
           username: '{{ printer | capitalize }}'
           icon: '{{ ''kiwifruit'' if printer == ''kiwi'' else printer }}'
+          blocks:
+          - type: section
+            text:
+              type: mrkdwn
+              text: "{{ progress_msg }}"
+          - type: actions
+            elements:
+            - type: button
+              text:
+                type: plain_text
+                text: "Cancel Print"
+              style: danger
+              action_id: cancel_bambu_print
+              value: "{{ printer }}"
+              confirm:
+                title:
+                  type: plain_text
+                  text: "Cancel Print?"
+                text:
+                  type: mrkdwn
+                  text: "This will stop the current print. Are you sure?"
+                confirm:
+                  type: plain_text
+                  text: "Yes, cancel it"
+                deny:
+                  type: plain_text
+                  text: "Never mind"
       action: notify.make_nashville
   mode: single
 - id: '1722144402850'
@@ -146,12 +195,17 @@
         or end_dt %} — {% endif %}{% if display_name != object_name %}@{{display_name}},
         {% endif %}{{object_name}} is underway!{% if bed_type %} on a {{bed_type}}{%
         endif %}. {{states('input_text.'+printer+'_stream')}}"
+  - variables:
+      is_bambu: "{{ printer in ['kiwi','mango','papaya','strawberry','huckleberry'] }}"
+      blocks: >-
+        {% if is_bambu %}[{"type":"section","text":{"type":"mrkdwn","text":{{ msg | tojson }}}},{"type":"actions","elements":[{"type":"button","text":{"type":"plain_text","text":"Cancel Print"},"style":"danger","action_id":"cancel_bambu_print","value":"{{ printer }}","confirm":{"title":{"type":"plain_text","text":"Cancel Print?"},"text":{"type":"mrkdwn","text":"This will stop the current print. Are you sure?"},"confirm":{"type":"plain_text","text":"Yes, cancel it"},"deny":{"type":"plain_text","text":"Never mind"}}}]}]{% endif %}
   - action: rest_command.slack_post_3dprint
     data:
       channel: "#3dprint-info"
       text: "{{ msg }}"
       username: "{{ printer | capitalize }}"
       icon_emoji: ":{{ 'kiwifruit' if printer == 'kiwi' else printer }}:"
+      blocks: "{{ blocks }}"
     response_variable: slack_response
   - action: input_text.set_value
     target:
@@ -372,6 +426,13 @@
         %}{% if e %}{{ e }}{% else %}{% set s = states("sensor."+printer+"_print_time_left")|int(0)
         %}{% if s > 0 %}{{ now() + timedelta(seconds=s) }}{% endif %}{% endif %}'
       thread_ts: '{{ states("input_text."+printer+"_slack_thread_ts") }}'
+  - variables:
+      paused_msg: ':double_vertical_bar: {{progress}}%{% if end_dt %} | {% set secs =
+        (as_timestamp(end_dt) - as_timestamp(now())) | int(0) %}{% set h = secs //
+        3600 %}{% set m = (secs % 3600) // 60 %}{{ h }}h {{ ''%02d'' | format(m)
+        }}m (ends {{ as_timestamp(end_dt) | timestamp_custom(''%I:%M %p'') }}){% endif
+        %} — {% if display_name != object_name %}@{{display_name}}, {% endif %}{{object_name}}
+        is on hold. Head over when you get a chance! {{states(''input_text.''+printer+''_stream'')}}'
   - choose:
     - conditions:
       - condition: template
@@ -379,29 +440,73 @@
       sequence:
       - data:
           target: "#3dprint-info"
-          message: ':double_vertical_bar: {{progress}}%{% if end_dt %} | {% set secs =
-            (as_timestamp(end_dt) - as_timestamp(now())) | int(0) %}{% set h = secs //
-            3600 %}{% set m = (secs % 3600) // 60 %}{{ h }}h {{ ''%02d'' | format(m)
-            }}m (ends {{ as_timestamp(end_dt) | timestamp_custom(''%I:%M %p'') }}){% endif
-            %} — {% if display_name != object_name %}@{{display_name}}, {% endif %}{{object_name}}
-            is on hold. Head over when you get a chance! {{states(''input_text.''+printer+''_stream'')}}'
+          message: "{{ paused_msg }}"
           data:
             username: '{{ printer | capitalize }}'
             icon: '{{ ''kiwifruit'' if printer == ''kiwi'' else printer }}'
             thread_ts: '{{ thread_ts }}'
+            blocks:
+            - type: section
+              text:
+                type: mrkdwn
+                text: "{{ paused_msg }}"
+            - type: actions
+              elements:
+              - type: button
+                text:
+                  type: plain_text
+                  text: "Cancel Print"
+                style: danger
+                action_id: cancel_bambu_print
+                value: "{{ printer }}"
+                confirm:
+                  title:
+                    type: plain_text
+                    text: "Cancel Print?"
+                  text:
+                    type: mrkdwn
+                    text: "This will stop the current print. Are you sure?"
+                  confirm:
+                    type: plain_text
+                    text: "Yes, cancel it"
+                  deny:
+                    type: plain_text
+                    text: "Never mind"
         action: notify.make_nashville
     default:
     - data:
         target: "#3dprint-info"
-        message: ':double_vertical_bar: {{progress}}%{% if end_dt %} | {% set secs =
-          (as_timestamp(end_dt) - as_timestamp(now())) | int(0) %}{% set h = secs //
-          3600 %}{% set m = (secs % 3600) // 60 %}{{ h }}h {{ ''%02d'' | format(m)
-          }}m (ends {{ as_timestamp(end_dt) | timestamp_custom(''%I:%M %p'') }}){% endif
-          %} — {% if display_name != object_name %}@{{display_name}}, {% endif %}{{object_name}}
-          is on hold. Head over when you get a chance! {{states(''input_text.''+printer+''_stream'')}}'
+        message: "{{ paused_msg }}"
         data:
           username: '{{ printer | capitalize }}'
           icon: '{{ ''kiwifruit'' if printer == ''kiwi'' else printer }}'
+          blocks:
+          - type: section
+            text:
+              type: mrkdwn
+              text: "{{ paused_msg }}"
+          - type: actions
+            elements:
+            - type: button
+              text:
+                type: plain_text
+                text: "Cancel Print"
+              style: danger
+              action_id: cancel_bambu_print
+              value: "{{ printer }}"
+              confirm:
+                title:
+                  type: plain_text
+                  text: "Cancel Print?"
+                text:
+                  type: mrkdwn
+                  text: "This will stop the current print. Are you sure?"
+                confirm:
+                  type: plain_text
+                  text: "Yes, cancel it"
+                deny:
+                  type: plain_text
+                  text: "Never mind"
       action: notify.make_nashville
   mode: parallel
   max: 4
