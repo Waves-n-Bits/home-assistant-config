@@ -53,6 +53,12 @@ rest_command:
     payload: >-
       {"replace_original": false, "response_type": "in_channel",
        "text": {{ text | tojson }}}
+  slack_auth_test:
+    url: https://slack.com/api/auth.test
+    method: POST
+    headers:
+      Authorization: !secret slack_bot_token_header
+      Content-Type: "application/json; charset=utf-8"
   eventbrite_get_event:
     url: "{{ url }}"
     method: GET
@@ -89,6 +95,9 @@ input_boolean:
   facilities_pulse_verbose:
     name: Facilities Pulse Verbose Mode
     icon: mdi:bell-outline
+  deploy_restart_in_progress:
+    name: Deploy Restart In Progress
+    icon: mdi:restart
 
 recorder:
   purge_keep_days: 14
