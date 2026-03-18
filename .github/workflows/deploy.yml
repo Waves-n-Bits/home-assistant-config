@@ -69,6 +69,15 @@ jobs:
             -d "$body" \
             "${{ secrets.HA_URL }}/api/services/notify/make_nashville"
 
+      - name: Flag deploy restart in progress
+        if: steps.restart_check.outputs.required == 'true'
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.HA_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"entity_id": "input_boolean.deploy_restart_in_progress"}' \
+            "${{ secrets.HA_URL }}/api/services/input_boolean/turn_on"
+
       - name: Trigger HA full restart
         if: steps.restart_check.outputs.required == 'true'
         run: |
