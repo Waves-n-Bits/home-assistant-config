@@ -86,12 +86,12 @@ Six printers, named after fruits:
 
 Bambu printers use anchors (`bambu_lab_printers`, `all_printers`) in `automations/printers.yaml` — add new Bambu printers to those anchors.
 
-### Slack cancel button
+### Slack pause button
 
-Print Starting, Print Progress, Print Paused, and Gadget AI notifications include a Slack Block Kit "Cancel Print" button (Bambu printers only). Clicking it triggers a confirmation dialog, then POSTs to an HA webhook that presses `button.{printer}_stop_printing` and responds in Slack.
+Print Starting, Print Progress, Print Paused, and Gadget AI notifications include a Slack Block Kit "Pause Print" button (Bambu printers only). Clicking it triggers a confirmation dialog, then POSTs to an HA webhook that presses `button.{printer}_pause_printing` and responds in Slack.
 
-- The button uses `action_id: cancel_bambu_print` with the printer name as `value`
-- The webhook automation is in `automations/webhooks.yaml` (`Slack – Cancel Bambu Print`)
+- The button uses `action_id: pause_bambu_print` with the printer name as `value`
+- The webhook automation is in `automations/webhooks.yaml` (`Slack – Pause Bambu Print`)
 - `rest_command.slack_respond` in `configuration.yaml` handles the Slack response via `response_url`
 - Requires Slack app Interactivity enabled with Request URL pointing to the HA webhook
 - Secret: `slack_cancel_print_webhook_id` in `secrets.yaml`

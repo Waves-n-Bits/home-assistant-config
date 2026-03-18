@@ -89,20 +89,19 @@
               - type: button
                 text:
                   type: plain_text
-                  text: "Cancel Print"
-                style: danger
-                action_id: cancel_bambu_print
+                  text: "Pause Print"
+                action_id: pause_bambu_print
                 value: "{{ printer_id }}"
                 confirm:
                   title:
                     type: plain_text
-                    text: "Cancel Print?"
+                    text: "Pause Print?"
                   text:
                     type: mrkdwn
-                    text: "This will stop the current print. Are you sure?"
+                    text: "This will pause the current print. Are you sure?"
                   confirm:
                     type: plain_text
-                    text: "Yes, cancel it"
+                    text: "Yes, pause it"
                   deny:
                     type: plain_text
                     text: "Never mind"
@@ -124,28 +123,27 @@
             - type: button
               text:
                 type: plain_text
-                text: "Cancel Print"
-              style: danger
-              action_id: cancel_bambu_print
+                text: "Pause Print"
+              action_id: pause_bambu_print
               value: "{{ printer_id }}"
               confirm:
                 title:
                   type: plain_text
-                  text: "Cancel Print?"
+                  text: "Pause Print?"
                 text:
                   type: mrkdwn
-                  text: "This will stop the current print. Are you sure?"
+                  text: "This will pause the current print. Are you sure?"
                 confirm:
                   type: plain_text
-                  text: "Yes, cancel it"
+                  text: "Yes, pause it"
                 deny:
                   type: plain_text
                   text: "Never mind"
   mode: parallel
   max: 5
-- id: slack_cancel_bambu_print
-  alias: Slack – Cancel Bambu Print
-  description: Handles Slack interactive button clicks to cancel a Bambu Lab print
+- id: slack_pause_bambu_print
+  alias: Slack – Pause Bambu Print
+  description: Handles Slack interactive button clicks to pause a Bambu Lab print
   triggers:
   - trigger: webhook
     webhook_id: !secret slack_cancel_print_webhook_id
@@ -157,7 +155,7 @@
     value_template: >
       {% set payload = trigger.data.get('payload', '{}') | from_json %}
       {% set action = (payload.get('actions', [{}])[0]) %}
-      {{ action.get('action_id', '') == 'cancel_bambu_print'
+      {{ action.get('action_id', '') == 'pause_bambu_print'
          and action.get('value', '') in ['kiwi','mango','papaya','strawberry','huckleberry'] }}
   actions:
   - variables:
@@ -167,10 +165,10 @@
       slack_user: "{{ payload.user.name | default('Someone') }}"
   - action: button.press
     target:
-      entity_id: "button.{{ printer }}_stop_printing"
+      entity_id: "button.{{ printer }}_pause_printing"
   - action: rest_command.slack_respond
     data:
       response_url: "{{ response_url }}"
-      text: ":octagonal_sign: {{ slack_user }} cancelled the print on {{ printer | capitalize }}."
+      text: ":double_vertical_bar: {{ slack_user }} paused the print on {{ printer | capitalize }}."
   mode: parallel
   max: 6
