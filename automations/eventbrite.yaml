@@ -78,7 +78,40 @@
       data:
         target: "#integrations_sandbox"
         message: |-
-          :wave: *Eventbrite Signups Yesterday* ({{ count }} new)
+          :wave: *Eventbrite Signups — Last 24 Hours* ({{ count }} new)
+          {{ event_lines }}
+        data:
+          username: Eventbrite
+          icon: calendar
+  mode: single
+
+- id: 'eventbrite_event_day_alert'
+  alias: Eventbrite Event Day Alert
+  triggers:
+    - trigger: time
+      at: '08:00:00'
+  conditions:
+    - condition: template
+      value_template: >
+        {{ states('sensor.eventbrite_today_events') | int(0) > 0
+           and state_attr('sensor.eventbrite_today_events', 'events') is not none }}
+  actions:
+    - variables:
+        events: "{{ state_attr('sensor.eventbrite_today_events', 'events') }}"
+    - variables:
+        event_lines: |-
+          {% for event in events %}
+          {% set signups = event.ticket_classes | default([]) | map(attribute='quantity_sold') | map('int', default=0) | sum %}
+          *{{ event.name.text }}*
+          :clock1: {{ event.start.local | as_datetime | timestamp_custom('%-I:%M %p') }}
+          :busts_in_silhouette: {{ signups }} signup{{ 's' if signups != 1 }}
+          :link: {{ event.url }}
+          {% endfor %}
+    - action: notify.make_nashville
+      data:
+        target: "#integrations_sandbox"
+        message: |-
+          :mega: *Events Today*
           {{ event_lines }}
         data:
           username: Eventbrite
