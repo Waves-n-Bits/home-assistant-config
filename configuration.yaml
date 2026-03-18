@@ -43,7 +43,16 @@ rest_command:
       Content-Type: "application/json; charset=utf-8"
     payload: >-
       {"channel": {{ channel | tojson }}, "text": {{ text | tojson }},
-       "username": {{ username | tojson }}, "icon_emoji": {{ icon_emoji | tojson }}}
+       "username": {{ username | tojson }}, "icon_emoji": {{ icon_emoji | tojson }}
+       {% if blocks is defined and blocks %}, "blocks": {{ blocks }}{% endif %}}
+  slack_respond:
+    url: "{{ response_url }}"
+    method: POST
+    headers:
+      Content-Type: "application/json; charset=utf-8"
+    payload: >-
+      {"replace_original": false, "response_type": "in_channel",
+       "text": {{ text | tojson }}}
   eventbrite_get_event:
     url: "{{ url }}"
     method: GET
